@@ -5,7 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "psycopg2", 
+    "psycopg2-binary", 
     "google-cloud",
     "google-auth",
     "google-auth-oauthlib", 
