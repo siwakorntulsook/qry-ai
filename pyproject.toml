@@ -5,10 +5,17 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "psycopg2-binary", 
-    "google-cloud",
-    "google-auth",
-    "google-auth-oauthlib", 
-    "google-auth-httplib2",
-    "faker"
+    "psycopg2-binary",
+    "langchain",
+    "langchain_google_genai",
+    "langchain_community",
+    "faker",
+    "pandas",
+    "pip",
+    "uv",
+    "sqlalchemy",
+    "pydantic",
+    "mermaid-cli",
+    "mmdc",
+    "markdown"
 ]
