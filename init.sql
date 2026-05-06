@@ -3,7 +3,7 @@ CREATE TABLE orders (
     customer_id INTEGER NOT NULL,
     amount NUMERIC(10, 2) NOT NULL,
     region TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT "1970-01-01 00:00:00"
+    created_at TIMESTAMP DEFAULT '1970-01-01 00:00:00'
 );
 
 CREATE TABLE customers (
@@ -11,7 +11,7 @@ CREATE TABLE customers (
     name TEXT NOT NULL,
     email TEXT NOT NULL,
     plan_tier TEXT NOT NULL,
-    signup_date TIMESTAMP DEFAULT "1970-01-01 00:00:00"
+    signup_date TIMESTAMP DEFAULT '1970-01-01 00:00:00'
 );
 
 CREATE TABLE products (

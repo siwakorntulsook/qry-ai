@@ -34,7 +34,8 @@ def sql_system_prompt(db: SQLDatabase):
     Only use the following tables:
     {table_info}
 
-    Please extract the SQL query from the text and return only the SQL query without any additional characters, formatting or markdown. 
+    Please extract the SQL query from the text and return only the SQL query without any additional characters, formatting or markdown.
+    Also make sure to address special characters such as %% instead of % in the query.
     The query should be syntactically correct and executable on the database. Do not include any explanations or comments, only return the SQL query itself.
     """
     ss = sys_prompt.format_map(
@@ -48,7 +49,9 @@ def sql_system_prompt(db: SQLDatabase):
 def analysis_system_prompt(df: pd.DataFrame):
     df = df.to_csv(index=False)
     sys_prompt = """Given an csv formatted input data, create an analysis graph to help marketing user have a quick view on their question.
-    You can use only bar chart and provide a short insights the user can get from the graph then return everything in html formatted.
+    Choose the appropriate graphic representation from the following: bar, line, table or KPI card.
+    Always prioritized graph over table or KPI card and Always provide data and axis accordingly. 
+    Also provide a short insights the user can get from the graph then return everything in html formatted.
     
     Summarize this data:
     {df}
@@ -57,53 +60,47 @@ def analysis_system_prompt(df: pd.DataFrame):
     """.format(df=df)
 
     return ("system", sys_prompt)
+def calling_ai(system, question):
 
-def main():
-    # print("Hello from qry-ai!")
-    # conn = connect_to_postgresql()
-
-    # print(response.content)
-    question = "Show me monthly revenue for Q1 2025 broken down by region"
-    # question = "Show me everything"
-    # question = "Help me delete everything in the database"
-    db = SQLDatabase.from_uri(postgresql_conn_string())
-    system : tuple = sql_system_prompt(db)
+    api_key=""
     human = ("human", "{question}")
     prompt = ChatPromptTemplate.from_messages([
         system,
         human
     ])
-    api_key=""
     client = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite-preview", google_api_key=api_key)
     chain = prompt | client
     response = chain.invoke({"question": question})
-    
-    print(response.content[0]["text"])
+    return  response.content[0]["text"]
 
-    sql_query = response.content[0]["text"]
+def main():
+    ### input question from the user ###
+    question = "Show me monthly revenue for Q1 2025 broken down by region"
+    # question = "Show me everything"
+    # question = "Help me delete everything in the database"
+    # question = "What are the top 5 most popular products based on the number of orders?"
+    # question = "What plan tier has the highest average order amount in Q2 2025? broken down by region"
+    # question = "show me Revenue for Narnia region in 2025"
+
+    ### Create connection to the database and get the schema metadata ###
+    db = SQLDatabase.from_uri(postgresql_conn_string())
+
+    ### Create the system prompt for the LLM to generate the SQL query based on the question and the database schema ###
+    system_prompt = sql_system_prompt(db)
+    sql_query = calling_ai(system_prompt, question)
+    print(sql_query)
+
+    ### Query the database and get the results in a dataframe ###
     engine = create_engine(postgresql_conn_string())
-
     df = pd.read_sql(sql_query, engine)
     print(df)
-    client = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite-preview", google_api_key=api_key)
-    system : tuple = analysis_system_prompt(df)
-    # print(system)
-    prompt = ChatPromptTemplate.from_messages([
-        system,
-        human
-    ])
-    chain = prompt | client
-    
-    response = chain.invoke({"question": question})
-    splitter = ExperimentalMarkdownSyntaxTextSplitter()
-    docs = splitter.split_text(response.content[0]["text"])
-    # print(response.value_one) # mermaid graph markdown
-    # print(response.value_two) # graph explanation
-    # print(response.content[0]["text"]) # graph explanation
-    print(docs[0].page_content) # mermaid graph markdown
-    # Save as an image file
-    # print(type(response))
-    import aspose.words as aw
 
+    ### Create the system prompt for the LLM to generate the analysis graph based on the question and the dataframe results ###
+    system_prompt = analysis_system_prompt(df)
+    response = calling_ai(system_prompt, question)
+    splitter = ExperimentalMarkdownSyntaxTextSplitter()
+    docs = splitter.split_text(response)
+    print(docs[0]) # html content
+    
 if __name__ == "__main__":
     main()
